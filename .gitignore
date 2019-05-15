@@ -194,3 +194,12 @@ fabric.properties
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
 
+# Current project folders
+.DS_Store
+data/
+notebook/
+test/
+testdata/hailtables/ccrs_test_table.ht/references/
+testdata/matrixtables/
+testdata/vcfs/
+/notebook_old/

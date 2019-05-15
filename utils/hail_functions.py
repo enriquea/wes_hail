@@ -1,5 +1,6 @@
 import hail as hl
 import hail.expr.aggregators as agg
+from typing import Union
 
 
 # run MT rows logistic regression
@@ -57,3 +58,25 @@ def compute_fisher_exact(tb: hl.Table,
         return tb
     else:
         return tb.annotate(**extra_fields)
+
+
+# Add global annotations to HailTable/MatrixTable
+def add_global_annotations(ds: Union[hl.MatrixTable, hl.Table],
+                           annotations: dict,
+                           overwrite: True) -> Union[hl.MatrixTable, hl.Table]:
+    """
+    :param ds: MatrixTable or HailTable
+    :param annotations: Dictionary with key:value annotations
+    :param overwrite: If True (default), old annotation will be removed
+    :return: ds (input) with global annotations
+    """
+    if overwrite:
+        ds = (ds
+              .drop(*ds.index_globals())  # remove global annotation
+              .annotate_globals(**annotations)
+              )
+    else:
+        ds = (ds
+              .annotate_globals(**annotations)
+              )
+    return ds

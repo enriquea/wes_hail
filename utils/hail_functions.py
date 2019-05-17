@@ -1,6 +1,13 @@
+"""
+
+A set of helper function for Hail tool.
+
+"""
+
 import hail as hl
 import hail.expr.aggregators as agg
 from typing import Union
+from pyspark import SparkContext, SparkConf
 
 
 # run MT rows logistic regression
@@ -80,3 +87,28 @@ def add_global_annotations(ds: Union[hl.MatrixTable, hl.Table],
               .annotate_globals(**annotations)
               )
     return ds
+
+
+# Function to compute sample/variant QC
+def compute_qc(mt: hl.MatrixTable,
+               root_col_name='sample_qc',
+               root_row_name='variant_qc') -> hl.MatrixTable:
+    mt = hl.sample_qc(mt, name=root_col_name)
+    mt = hl.variant_qc(mt, name=root_row_name)
+    return mt
+
+
+# Basic function to initialize Hail on cluster or local mode
+def init_hail_on_cluster(app_name: str = 'Hail',
+                         tmp_dir: str = '/tmp',
+                         log_file: str = '/logs/hail.log',
+                         local_mode: bool = False):
+    if local_mode:
+        hl.init()
+    else:
+        # Create SparkContext with default parameters (from SPARK_PATH/conf/spark-defaults.conf)
+        sc = SparkContext()
+        hl.init(sc=sc,
+                tmp_dir=tmp_dir,
+                app_name=app_name,
+                log=log_file)

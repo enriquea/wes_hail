@@ -15,7 +15,7 @@ and export the it as Hail Table with global annotations.
 
 # Define files paths
 CCR_FILES_PATH = os.path.join(ROOT_DIR, 'testdata/ccrs')
-OUTPUT_PATH = os.path.join(ROOT_DIR, 'testdata/hailtables/ccrs_test_table.ht')
+OUTPUT_PATH = os.path.join(ROOT_DIR, 'testdata/hts/ccrs_test_table.ht')
 
 # Initializing Hail on local mode
 hl.init(log=HAIL_LOG_PATH)

@@ -199,7 +199,7 @@ fabric.properties
 data/
 notebook/
 test/
-testdata/hailtables/ccrs_test_table.ht/references/
-testdata/matrixtables/
+testdata/hts/ccrs_test_table.ht/references/
+testdata/mts/
 testdata/vcfs/
 /notebook_old/

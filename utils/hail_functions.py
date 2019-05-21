@@ -107,7 +107,7 @@ def init_hail_on_cluster(app_name: str = 'Hail',
         hl.init()
     else:
         # Create SparkContext with default parameters (from SPARK_PATH/conf/spark-defaults.conf)
-        sc = SparkContext()
+        sc = SparkContext(appName=app_name)
         hl.init(sc=sc,
                 tmp_dir=tmp_dir,
                 app_name=app_name,

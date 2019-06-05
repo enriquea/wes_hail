@@ -203,3 +203,4 @@ testdata/hts/ccrs_test_table.ht/references/
 testdata/mts/
 testdata/vcfs/
 /notebook_old/
+/spark_scripts/

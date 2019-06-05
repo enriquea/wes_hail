@@ -11,6 +11,7 @@ from utils.hail_functions import *
 
 
 def main(args):
+
     # Initializing Hail on cluster mode
     init_hail_on_cluster(app_name='pca-workflow',
                          tmp_dir='/mnt/nfs/mdatanode/hail-temp',
@@ -87,6 +88,7 @@ def main(args):
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--mt_path', help='Path to MatrixTable with computed QC metrics', type=str, default=None)

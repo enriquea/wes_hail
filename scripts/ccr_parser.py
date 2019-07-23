@@ -1,24 +1,24 @@
+#
+# Simple script to parse BED-formatted Constrain Coding Regions (CCRs)
+# and export the it as Hail Table with global annotations.
+#
 
 import time
-import hail as hl
-from utils.hail_functions import add_global_annotations
+
+from config import HAIL_LOG_PATH
+from utils.hail_functions import *
 from utils.parser import get_files_names
-from config import ROOT_DIR, HAIL_LOG_PATH
-import os
-
-"""
-
-Simple script to parse BED-formatted Constrain Coding Regions (CCRs)
-and export the it as Hail Table with global annotations.
-
-"""
 
 # Define files paths
-CCR_FILES_PATH = os.path.join(ROOT_DIR, 'testdata/ccrs')
-OUTPUT_PATH = os.path.join(ROOT_DIR, 'testdata/hts/ccrs_test_table.ht')
+CCR_FILES_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs'
+OUTPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs/ccr_table_072019.ht'
 
 # Initializing Hail on local mode
-hl.init(log=HAIL_LOG_PATH)
+# Initializing Hail on cluster mode
+init_hail_on_cluster(tmp_dir='/mnt/nfs/mdatanode/hail-temp',
+                     log_file=HAIL_LOG_PATH,
+                     local_mode=False)
+
 
 # Read CCRs BED files
 list_ccr_files = get_files_names(path=CCR_FILES_PATH,
@@ -46,7 +46,7 @@ ccr_tb = (ccr_tb
           )
 
 # Annotate global annotations
-annotations = {'date': time.strftime("%d-%m-%Y %H:%M"),
+annotations = {'date': time.strftime("%d-%m-%Y"),
                'table_info': 'constrained coding regions (ccr)',
                'DOI': 'https://doi.org/10.1038/s41588-018-0294-6',
                'source_bed_files': 'https://github.com/quinlan-lab/ccrhtml',
@@ -56,7 +56,11 @@ annotations = {'date': time.strftime("%d-%m-%Y %H:%M"),
 
 ccr_tb = add_global_annotations(ccr_tb, annotations=annotations, overwrite=True)
 
+# Print table fields
+ccr_tb.describe()
+
 # Write table to disk
 ccr_tb.write(OUTPUT_PATH, overwrite=True)
 
+# Stop cluster
 hl.stop()

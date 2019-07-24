@@ -4,10 +4,10 @@ A set of helper function for Hail tool.
 
 """
 
-from typing import *
-
 import hail as hl
-from pyspark import SparkContext
+import hail.expr.aggregators as agg
+from typing import Union
+from pyspark import SparkContext, SparkConf
 
 
 # run MT rows logistic regression
@@ -112,11 +112,3 @@ def init_hail_on_cluster(app_name: str = 'Hail',
                 tmp_dir=tmp_dir,
                 app_name=app_name,
                 log=log_file)
-
-
-# Annotate Coding Constraint Regions (CCRs)
-def annotate_ccr(mt: hl.MatrixTable,
-                 ht_ccr: hl.Table,
-                 fields_to_annotate: List[str]) -> hl.MatrixTable:
-    mt = mt.annotate_rows(**ht_ccr.select(*fields_to_annotate)[mt.locus])
-    return mt

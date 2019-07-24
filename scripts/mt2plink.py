@@ -4,7 +4,6 @@ Optionality, apply user-defined filters. Useful to run SKAT-O.
 
 """
 
-import time
 from config import HAIL_LOG_PATH
 from utils.hail_functions import *
 import hail as hl
@@ -15,7 +14,7 @@ init_hail_on_cluster(tmp_dir='/mnt/nfs/mdatanode/hail-temp',
                      local_mode=False)
 
 # Import MatrixTable
-MT_INPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/wes1k/mts/mt_1k_qced_filtered_09-07-2019.mt'
+MT_INPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/wes1k/mts/mt_1k_qced_filtered_17-05-2019.mt'
 mt = hl.read_matrix_table(MT_INPUT_PATH)
 
 # Filter MatrixTable before exporting (e.g. by AF)
@@ -36,8 +35,7 @@ mt = (mt
       )
 
 # Export plink files
-date = time.strftime("%d-%m-%Y")
-PLINK_OUTPUT_PATH = f'/mnt/nfs/mdatanode/wes10k_resources/wes1k/plink_output/hey2_{date}'
+PLINK_OUTPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/wes1k/plink_output/hey2'
 
 hl.export_plink(dataset=mt,
                 output=PLINK_OUTPUT_PATH,
@@ -46,25 +44,9 @@ hl.export_plink(dataset=mt,
                 is_female=mt.is_female)
 
 # Export useful info (e.g. covariates, annotation)
-
-sample_expr_annotations = dict(
-    cases_het=hl.delimit(hl.agg.filter(mt.GT.is_het() & mt.isCase, hl.agg.collect(mt.s)), delimiter='|'),
-    cases_hom=hl.delimit(hl.agg.filter(mt.GT.is_hom_var() & mt.isCase, hl.agg.collect(mt.s)), delimiter='|'),
-    controls_het=hl.delimit(hl.agg.filter(mt.GT.is_het() & ~mt.isCase, hl.agg.collect(mt.s)), delimiter='|'),
-    controls_hom=hl.delimit(hl.agg.filter(mt.GT.is_hom_var() & ~mt.isCase, hl.agg.collect(mt.s)), delimiter='|'))
-
 variant_table = (mt
-                 .annotate_rows(**sample_expr_annotations)
                  .rows()
-                 .select('key_variant',
-                         'symbol',
-                         'consequences',
-                         'csq_type',
-                         'cadd_phred',
-                         'cases_het',
-                         'cases_hom',
-                         'controls_het',
-                         'controls_hom')
+                 .select('key_variant', 'symbol', 'consequences', 'csq_type', 'cadd_phred')
                  )
 
 # Export table

@@ -7,6 +7,7 @@ A set of helper function for Hail tool.
 from typing import *
 
 import hail as hl
+import hail.expr.aggregators as agg
 from pyspark import SparkContext
 
 

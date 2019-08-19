@@ -2,6 +2,12 @@
 
 Compute relatedness estimates between individuals using a variant of the PC-Relate method.
 
+Example usage: python -m scripts.sample_relatedness --mt_path 'path/to/mt' \
+                                                    --ht_output_path 'path/to/hts' \
+                                                    --compute_pcs \
+                                                    --ld_pruning \
+                                                    --write_to_file
+
 """
 
 import argparse
@@ -23,7 +29,7 @@ def main(args):
     if args.sample_to_keep is not None:
         sample_table = hl.import_table(paths=args.sample_to_keep,
                                        no_header=True)
-        sample_set = sample_table.aggregate(agg.collect_as_set(sample_table.f0))
+        sample_set = hl.literal(sample_table.aggregate(agg.collect_as_set(sample_table.f0)))
         mt = mt.filter_cols(sample_set.contains(mt.s), keep=True)
 
     if args.ld_pruning:

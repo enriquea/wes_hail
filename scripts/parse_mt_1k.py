@@ -1,4 +1,9 @@
-# Script to extract and filtering the 1K CHD-cohort for replication
+"""
+
+Script to extract and QC-filtering the 1K CHD-cohort for replication study
+
+"""
+
 
 # Start a new Hail context
 
@@ -19,21 +24,15 @@ mt = hl.read_matrix_table(PATH_INPUT_MT)
 # Getting 1K subset (cases-control) for replication
 # samples to keep
 # Import TSV file as Hail Table
-PATH_SAMPLE_FILE = '/mnt/nfs/mdatanode/wes10k_resources/wes1k/annotations/samples_ids_1k_study.tsv'
+PATH_SAMPLE_FILE = '/mnt/nfs/mdatanode/wes10k_resources/wes1k/annotations/sample_ids_1k_amsterdam_07082019.tsv'
 sample_tb = (hl.import_table(PATH_SAMPLE_FILE,
                              impute=True,
-                             no_header=False)
-             .key_by('ms_id'))
-
-# annotate 1k set info
-mt = mt.annotate_cols(**sample_tb[mt.s])
-
-# collect samples as set
-# sample_ids = 'MS_ID' # sample ids column name
-# sample_set = hl.literal([row[sample_ids] for row in sample_tb.select(sample_ids).collect()])
+                             no_header=True)
+             .key_by('f0'))
 
 # Keep only 1K subset
-mt_1k = mt.filter_cols(hl.literal({'1K', 'Control'}).contains(mt['case_control']), keep=True)
+sample_set = hl.literal(sample_tb.aggregate(agg.collect_as_set(sample_tb.f0)))
+mt_1k = mt.filter_cols(sample_set.contains(mt.s), keep=True)
 
 # Re-compute QC based on this subset (e.g. Internal allelic frequency, Depth mean, Genotype quality mean, ect.)
 mt_1k = compute_qc(mt_1k)
@@ -44,7 +43,7 @@ mt_1k = compute_qc(mt_1k)
 mt_1k = mt_1k.filter_cols((mt_1k.sample_qc.dp_stats.mean >= 15) &  # depth
                           (mt_1k.sample_qc.call_rate >= 0.95) &  # call rate
                           (mt_1k.sample_qc.gq_stats.mean >= 25) &  # quality
-                          (mt_1k.max_pi_hat < 0.8) &  # relatedness
+                          (mt_1k.max_pi_hat < 0.8) &  # relatedness (remove duplicated)
                           (mt_1k.probability_EUR > 0.65),  # ancestry
                           keep=True)
 
@@ -103,7 +102,7 @@ annotations = {'date': date,
 ds = add_global_annotations(ds, annotations=annotations, overwrite=True)
 
 # export annotated and filtered MatrixTable for post-processing
-PATH_OUTPUT_MT = f'/mnt/nfs/mdatanode/wes10k_resources/wes1k/mts/mt_1k_qced_filtered_{date}.mt'
+PATH_OUTPUT_MT = f'/mnt/nfs/mdatanode/wes10k_resources/wes1k/mts/mt_1k_amsterdam_qced_filtered_{date}.mt'
 (ds
  .write(PATH_OUTPUT_MT,
         overwrite=False))

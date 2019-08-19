@@ -204,3 +204,7 @@ testdata/mts/
 testdata/vcfs/
 /notebook_old/
 /spark_scripts/
+.idea/inspectionProfiles/
+.idea/misc.xml
+logs/
+testdata/hts/

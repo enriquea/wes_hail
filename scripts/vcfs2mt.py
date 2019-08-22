@@ -1,5 +1,5 @@
 
-from utils.parser import *
+from utils.hail_functions import *
 
 import argparse
 import hail as hl

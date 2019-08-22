@@ -7,7 +7,7 @@ import time
 
 from config import HAIL_LOG_PATH
 from utils.hail_functions import *
-from utils.parser import get_files_names
+from utils.hail_functions import get_files_names
 
 # Define files paths
 CCR_FILES_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs'

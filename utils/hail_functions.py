@@ -1,10 +1,12 @@
 """
 
-A set of helper function for Hail tool.
+A set of helper function for Hail-based pipelines.
 
 """
 
+import os
 from typing import *
+from typing import List
 
 import hail as hl
 import hail.expr.aggregators as agg
@@ -73,6 +75,8 @@ def add_global_annotations(ds: Union[hl.MatrixTable, hl.Table],
                            annotations: dict,
                            overwrite: True) -> Union[hl.MatrixTable, hl.Table]:
     """
+    Rewrite MatrixTable/Table global annotations
+
     :param ds: MatrixTable or HailTable
     :param annotations: Dictionary with key:value annotations
     :param overwrite: If True (default), old annotation will be removed
@@ -94,6 +98,14 @@ def add_global_annotations(ds: Union[hl.MatrixTable, hl.Table],
 def compute_qc(mt: hl.MatrixTable,
                root_col_name='sample_qc',
                root_row_name='variant_qc') -> hl.MatrixTable:
+    """
+    Given a MatrixTable, compute samples/variants quality controls metrics
+
+    :param mt: Input MatrixTable
+    :param root_col_name: prefix sample qc field
+    :param root_row_name: prefix variant qc field
+    :return: MatrixTable with quality control computed
+    """
     mt = hl.sample_qc(mt, name=root_col_name)
     mt = hl.variant_qc(mt, name=root_row_name)
     return mt
@@ -119,5 +131,30 @@ def init_hail_on_cluster(app_name: str = 'Hail',
 def annotate_ccr(mt: hl.MatrixTable,
                  ht_ccr: hl.Table,
                  fields_to_annotate: List[str]) -> hl.MatrixTable:
+    """
+    Annotate a given MatrixTable with Coding Constrain Region (CCRs) information.
+
+    :param mt: Input MatrixTable
+    :param ht_ccr: CCR Hail Table
+    :param fields_to_annotate: List of fields from CCR table to be annotated
+    :return: Annotated MatrixTable
+    """
     mt = mt.annotate_rows(**ht_ccr.select(*fields_to_annotate)[mt.locus])
     return mt
+
+
+# import list of vcf files (paths)
+def get_files_names(path: str, ext: str) -> List[str]:
+    """
+    Get full path for files (e.g. vcf) in a given directory
+
+    :param path: directory global path
+    :param ext: files extension (e.g. vcf)
+    :return: List of files in directory
+    """
+    list_files: List[str] = []
+    for (dir_name, _, files) in os.walk(path):
+        for filename in files:
+            if filename.endswith(ext):
+                list_files.append(os.path.abspath(os.path.join(dir_name, filename)))
+    return list_files

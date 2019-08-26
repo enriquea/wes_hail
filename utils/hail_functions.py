@@ -158,3 +158,63 @@ def get_files_names(path: str, ext: str) -> List[str]:
             if filename.endswith(ext):
                 list_files.append(os.path.abspath(os.path.join(dir_name, filename)))
     return list_files
+
+
+# Summarize Coding Constraint Region (CCRs) table
+def summary_ccr(ht_ccr: hl.Table,
+                file_output: str,
+                ccr_pct_start: int = 0,
+                ccr_pct_end: int = 100,
+                ccr_pct_bins: int = 10,
+                cumulative_histogram: bool = False,
+                ccr_pct_cutoffs=None) -> None:
+    """
+    Summarize Coding Constrain Region information (as histogram) per gene.
+
+    :param ht_ccr: CCR Hail table
+    :param file_output: File output path
+    :param ccr_pct_start: Start of histogram range.
+    :param ccr_pct_end: End of histogram range
+    :param ccr_pct_bins: Number of bins
+    :param cumulative_histogram: Generate a cumulative histogram (rather than to use bins)
+    :param ccr_pct_cutoffs: Cut-offs used to generate the cumulative histogram
+    :return: None
+    """
+
+    if ccr_pct_cutoffs is None:
+        ccr_pct_cutoffs = [90, 95, 99]
+
+    if cumulative_histogram:
+        # generate cumulative counts histogram
+        summary_tb = (ht_ccr
+                      .group_by('gene')
+                      .aggregate(**{'ccr_above_' + str(ccr_pct_cutoffs[k]): agg.filter(ht_ccr.ccr_pct >=
+                                                                                       ccr_pct_cutoffs[k], agg.count())
+                                    for k in range(0, len(ccr_pct_cutoffs))})
+                      )
+    else:
+        summary_tb = (ht_ccr
+                      .group_by('gene')
+                      .aggregate(ccr_bins=agg.hist(ht_ccr.ccr_pct, ccr_pct_start, ccr_pct_end, ccr_pct_bins))
+                      )
+
+        # get bin edges as list (expected n_bins + 1)
+        bin_edges = summary_tb.aggregate(agg.take(summary_tb.ccr_bins.bin_edges, 1))[0]
+
+        # unpack array structure and annotate as individual fields
+        summary_tb = (summary_tb
+                      .annotate(**{'ccr_bin_' + str(bin_edges[k]) + '_' + str(bin_edges[k + 1]):
+                                   summary_tb.ccr_bins.bin_freq[k] for k in range(0, len(bin_edges) - 1)})
+                      .flatten()
+                      )
+
+        # drop fields
+        fields_to_drop = ['ccr_bins.bin_edges', 'ccr_bins.bin_freq']
+        summary_tb = (summary_tb
+                      .drop(*fields_to_drop)
+                      )
+
+    # Export summarized table
+    (summary_tb
+     .export(output=file_output)
+     )

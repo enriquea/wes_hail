@@ -226,3 +226,39 @@ def summary_ccr(ht_ccr: hl.Table,
     (summary_tb
      .export(output=file_output)
      )
+
+
+# Annotate sex based on inbreeding coefficient (F_stat) on chromosome X
+def annotate_sex(ds: Union[hl.MatrixTable, hl.Table],
+                 f_stat_field: str = 'f_stat',
+                 sex_field: str = 'sex',
+                 female_upper_threshold: float = 0.4,
+                 male_lower_threshold: float = 0.6,
+                 ) -> Union[hl.MatrixTable, hl.Table]:
+    """
+    Annotate sex (0-female/1-male) based on F_stat (inbreeding coefficient computed on chr X)
+
+    :param ds: Input MatrixTable or HailTable
+    :param f_stat_field: F stat field name
+    :param sex_field: Sex field name to be annotated
+    :param female_upper_threshold: F_stat female upper threshold
+    :param male_lower_threshold: F_stat male lower threshold
+    :return: Annotated ds
+    """
+    if isinstance(ds, hl.MatrixTable):
+        ds = (ds
+              .annotate_cols(**{sex_field: (hl.case()
+                                            .when(ds[f_stat_field] <= female_upper_threshold, 0)
+                                            .when(ds[f_stat_field] >= male_lower_threshold, 1)
+                                            .or_missing())}
+                             )
+              )
+    else:
+        ds = (ds
+              .annotate(**{sex_field: (hl.case()
+                                       .when(ds[f_stat_field] <= female_upper_threshold, 0)
+                                       .when(ds[f_stat_field] >= male_lower_threshold, 1)
+                                       .or_missing())}
+                        )
+              )
+    return ds

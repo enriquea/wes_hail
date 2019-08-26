@@ -19,7 +19,8 @@ def logistic_regression(mt: hl.MatrixTable,
                         response: str,
                         covs: list,
                         pass_through: list,
-                        extra_fields: dict) -> hl.Table:
+                        extra_fields: dict,
+                        add_odd_stats: bool = True) -> hl.Table:
     # parsing covariates list
     if len(covs) >= 1:
         covs = [1] + [mt[field] for field in covs]
@@ -31,6 +32,13 @@ def logistic_regression(mt: hl.MatrixTable,
                                            covariates=covs,
                                            pass_through=pass_through,
                                            test='wald')
+
+    if add_odd_stats:
+        # Compute Odds ratio and 95% confidence interval from logistics regression stats
+        tb_stats = tb_stats.annotate(odds_ratio=hl.exp(tb_stats.beta),
+                                     lower_ci_95=hl.exp(tb_stats.beta - 1.96 * tb_stats.standard_error),
+                                     upper_ci_95=hl.exp(tb_stats.beta + 1.96 * tb_stats.standard_error))
+
     # add column with additional information
     if len(extra_fields) == 0:
         return tb_stats
@@ -204,7 +212,7 @@ def summary_ccr(ht_ccr: hl.Table,
         # unpack array structure and annotate as individual fields
         summary_tb = (summary_tb
                       .annotate(**{'ccr_bin_' + str(bin_edges[k]) + '_' + str(bin_edges[k + 1]):
-                                   summary_tb.ccr_bins.bin_freq[k] for k in range(0, len(bin_edges) - 1)})
+                                       summary_tb.ccr_bins.bin_freq[k] for k in range(0, len(bin_edges) - 1)})
                       .flatten()
                       )
 

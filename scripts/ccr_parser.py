@@ -1,7 +1,9 @@
-#
-# Simple script to parse BED-formatted Constrain Coding Regions (CCRs)
-# and export the it as Hail Table with global annotations.
-#
+"""
+
+Simple script to parse BED-formatted Constrain Coding Regions (CCRs)
+and export the it as Hail Table with global annotations.
+
+"""
 
 import time
 
@@ -18,7 +20,6 @@ OUTPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs/ccr_table_072019.ht'
 init_hail_on_cluster(tmp_dir='/mnt/nfs/mdatanode/hail-temp',
                      log_file=HAIL_LOG_PATH,
                      local_mode=False)
-
 
 # Read CCRs BED files
 list_ccr_files = get_files_names(path=CCR_FILES_PATH,

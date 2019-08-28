@@ -66,6 +66,8 @@ def main(args):
     else:
         relatedness = hl.pc_relate(mt.GT, args.individual_specific_maf, k=None, statistics='all')
 
+    # TODO: retrieve maximal independent sample set
+
     # Write/export table to file
     tb = (relatedness
           .flatten()

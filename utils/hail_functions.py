@@ -123,7 +123,17 @@ def compute_qc(mt: hl.MatrixTable,
 def init_hail_on_cluster(app_name: str = 'Hail',
                          tmp_dir: str = '/tmp',
                          log_file: str = '/logs/hail.log',
-                         local_mode: bool = False):
+                         local_mode: bool = False) -> None:
+    """
+    Init Hail context on Spark cluster or in local mode
+
+    :param app_name: Application name
+    :param tmp_dir: Directory for temporal file (network visible on cluster mode)
+    :param log_file: Hail log file
+    :param local_mode: Init Hail on local mode
+    :return: None
+    """
+
     if local_mode:
         hl.init()
     else:

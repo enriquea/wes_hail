@@ -9,13 +9,11 @@ import time
 
 from config import HAIL_LOG_PATH
 from utils.hail_functions import *
-from utils.hail_functions import get_files_names
 
 # Define files paths
 CCR_FILES_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs'
 OUTPUT_PATH = '/mnt/nfs/mdatanode/wes10k_resources/ccrs/ccr_table_072019.ht'
 
-# Initializing Hail on local mode
 # Initializing Hail on cluster mode
 init_hail_on_cluster(tmp_dir='/mnt/nfs/mdatanode/hail-temp',
                      log_file=HAIL_LOG_PATH,

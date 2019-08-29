@@ -50,9 +50,9 @@ def main(args):
     if args.keep_allele_balanced_genotypes:
         ab = mt.AD[1] / hl.sum(mt.AD)  # expression to compute allelic balance
 
-        filter_condition_ab = [mt.GT.is_hom_ref() & (ab <= 0.1),
-                               mt.GT.is_het() & (ab >= 0.25) & (ab <= 0.75),
-                               mt.GT.is_hom_var() & (ab >= 0.9)]
+        filter_condition_ab = [mt.GT.is_hom_ref() & (ab <= args.hom_ref_ab_upper),
+                               mt.GT.is_het() & (ab >= args.het_ab_lower) & (ab <= args.het_ab_upper),
+                               mt.GT.is_hom_var() & (ab >= args.hom_var_ab_lower)]
 
         mt = (mt
               .filter_entries(functools.reduce(operator.ior, filter_condition_ab), keep=True)
@@ -72,12 +72,17 @@ def main(args):
                                          'min_dp_mean': args.min_variant_dp_mean},
                    'only_snp': True if args.only_snp else False,
                    'only_biallelic': True if args.only_biallelic else False,
-                   'genotype_qc_filter': {'filtered_genotypes_by_ab': args.keep_allele_balanced_genotypes},
+                   'genotype_qc_filter': {'ab_filtered': True if args.keep_allele_balanced_genotypes else False,
+                                          'hom_ref_ab_upper_threshold': args.hom_ref_ab_upper,
+                                          'het_ab_lower_threshold': args.het_ab_lower,
+                                          'het_ab_upper_threshold': args.het_ab_upper,
+                                          'hom_var_ab_lower_threshold': args.hom_var_ab_lower},
                    'AF_filtering': 'None'}
 
     # rewrite global annotations
     mt = add_global_annotations(mt, annotations=annotations, overwrite=True)
 
+    # write filtered mt to disk
     (mt
      .write(args.mt_output_path,
             overwrite=True)
@@ -110,6 +115,10 @@ if __name__ == '__main__':
     # genotype filtering by allelic balance
     parser.add_argument('--keep_allele_balanced_genotypes', help="Filter out non-balanced genotypes",
                         action='store_true')
+    parser.add_argument('--hom_ref_ab_upper', help='Allele balance (hom_ref) upper threshold', type=float, default=0.10)
+    parser.add_argument('--het_ab_lower', help='Allele balance (het) lower threshold', type=float, default=0.20)
+    parser.add_argument('--het_ab_upper', help='Allele balance (het) upper threshold', type=float, default=0.80)
+    parser.add_argument('--hom_var_ab_lower', help='Allele balance (hom_var) lower threshold', type=float, default=0.90)
 
     args = parser.parse_args()
 

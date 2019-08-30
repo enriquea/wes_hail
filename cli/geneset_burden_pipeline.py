@@ -4,40 +4,23 @@ from utils.hail_functions import *
 
 
 def main(args):
-
     # Initializing Hail on cluster mode
     init_hail_on_cluster(tmp_dir='/mnt/nfs/mdatanode/hail-temp',
                          log_file=HAIL_LOG_PATH,
-                         local_mode=False)
+                         local_mode=True)
+
+    # 1- Aggregate MatrixTable per gene/consequences creating gene/csq X sample matrix
 
     # Read MatrixTable
     mt = hl.read_matrix_table(args.mt_input_path)
-
-    # Import/parsing gene cluster table
-    clusters = hl.import_table(args.gene_set_path)
-
-    # parsing gene set column
-    clusters = (clusters
-                .transmute(gene_set=hl.set(clusters.geneset.split(delim='[|]')))
-                .explode(clusters.gene_set)
-                .group_by('gene_set')
-                .partition_hint(100)
-                .aggregate(cluster_name=agg.collect_as_set(clusters.cluster_name))
-                .key_by('gene_set')
-                )
-
-    # annotate gene set info
-    mt = (mt
-          .annotate_rows(gene_set=clusters[mt.symbol].cluster_name)
-          )
 
     # Annotate csq group info per variants
     # Define consequences variant rules with hail expressions
     csq_group_rules = {'PTV': mt.csq_type == 'PTV',
                        'PAV': mt.csq_type == 'PAV',
                        'SYN': mt.csq_type == 'SYN',
-                       'CADD20': (mt.csq_type == 'PAV') & (mt.cadd_phred >= args.cadd_threshold),
-                       'MPC2': (mt.csq_type == 'PAV') & (mt.mpc >= args.mpc_threshold)
+                       'CADD': (mt.csq_type == 'PAV') & (mt.cadd_phred >= args.cadd_threshold),
+                       'MPC': (mt.csq_type == 'PAV') & (mt.mpc >= args.mpc_threshold)
                        }
 
     # Annotate groups per variants
@@ -55,15 +38,56 @@ def main(args):
     # Explode nested csq_group before grouping
     mt = (mt
           .explode_rows(mt.csq_group)
-          .explode_rows(mt.cluster_name)
           )
 
-    # Group mt by cluster id
+    # Group mt by gene/csq_group.
     mt_grouped = (mt
-                  .group_rows_by(mt.cluster_name, mt.csq_group)
+                  .group_rows_by(mt.csq_group, mt.symbol)
                   .partition_hint(100)
                   .aggregate(n_het=agg.count_where(mt.GT.is_het()))
                   )
+
+    # 2- Annotate gene set information
+
+    # Import/parsing gene cluster table
+    clusters = hl.import_table(args.gene_set_path,
+                               no_header=True)
+
+    # parsing gene set column
+    clusters = (clusters
+                .transmute(genes=hl.set(clusters['f1'].split(delim='[|]')))
+                )
+
+    clusters = (clusters
+                .explode(clusters.genes)
+                )
+
+    clusters = (clusters
+                .group_by('genes')
+                .partition_hint(100)
+                .aggregate(cluster_name=agg.collect_as_set(clusters['f0']))
+                .key_by('genes')
+                )
+
+    # annotate gene set info
+    mt_grouped = (mt_grouped
+                  .annotate_rows(cluster_name=clusters[mt_grouped.symbol].cluster_name)
+                  )
+
+    # 3- Aggregate per gene set and consequences
+
+    # Group mt by gene set/csq_group.
+    mt_grouped = (mt_grouped
+                  .explode_rows(mt_grouped.cluster_name)
+                  )
+    mt_grouped = (mt_grouped
+                  .group_rows_by(mt_grouped.cluster_name, mt_grouped.csq_group)
+                  .partition_hint(100)
+                  .aggregate(n_het=agg.sum(mt_grouped.n_het))
+                  )
+
+    # force to eval all aggregation operation by writing mt to disk
+    mt_grouped = mt_grouped.persist(storage_level='DISK_ONLY')
 
     if args.logistic_regression:
         # covariates list
@@ -72,13 +96,12 @@ def main(args):
         # Define x expression (entries/genotype)
         x_expr = 'n_het'
 
-        # running syndromic
         extra_annotations = {'analysis': 'all_cases',
                              'covariates': covs}
 
         tb_stats = logistic_regression(mt=mt_grouped,
                                        x_expr=x_expr,
-                                       response='isCase',
+                                       response=args.phenotype_field,
                                        covs=covs,
                                        pass_through=[],
                                        extra_fields=extra_annotations)
@@ -87,6 +110,8 @@ def main(args):
 
     if args.fet:
         None  # TODO: implement Fisher Exact-based burden gene set test
+
+    hl.stop()
 
 
 if __name__ == '__main__':
@@ -111,13 +136,13 @@ if __name__ == '__main__':
     # test to run
     parser.add_argument('--logistic_regression', help='Run logistic regression burden test', action='store_true')
     parser.add_argument('--phenotype_field', help='Binary phenotype field name', type=str, default='isCase')
-    parser.add_argument('--add_covariates', help='Run logistic regression test with covariates', action=True)
-    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression test', type=list,
-                        default=None)
+    parser.add_argument('--add_covariates', help='Run logistic regression test with covariates', action='store_true')
+    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression test',
+                        type=str, nargs="*", default=[])
     parser.add_argument('--fet', help='Run tow-sided Fisher Exact Test', action='store_true')
 
     # x-expression
-    parser.add_argument('--only_het', help='Aggregate only heterozygous genotypes', action=True)
+    parser.add_argument('--only_het', help='Aggregate only heterozygous genotypes', action='store_true')
 
     args = parser.parse_args()
 

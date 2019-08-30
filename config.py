@@ -8,3 +8,6 @@ LOGS_PATH = os.path.join(ROOT_DIR, 'logs')
 
 # Hail log file
 HAIL_LOG_PATH = os.path.join(ROOT_DIR, 'logs/hail.log')
+
+# Hail temporal directory path (network visible)
+HAIL_TMP_DIR = '/mnt/nfs/mdatanode/hail-temp'

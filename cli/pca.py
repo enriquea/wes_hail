@@ -6,7 +6,7 @@ Perform variant LD-pruning before run PCA.
 
 import argparse
 import time
-from config import HAIL_LOG_PATH
+from config import *
 from utils.hail_functions import *
 
 
@@ -14,7 +14,7 @@ def main(args):
 
     # Initializing Hail on cluster mode
     init_hail_on_cluster(app_name='pca-workflow',
-                         tmp_dir='/mnt/nfs/mdatanode/hail-temp',
+                         tmp_dir=HAIL_TMP_DIR,
                          log_file=HAIL_LOG_PATH,
                          local_mode=False)
 

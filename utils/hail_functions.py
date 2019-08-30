@@ -6,7 +6,6 @@ A set of helper function for Hail-based pipelines.
 
 import os
 from typing import *
-from typing import List
 
 import hail as hl
 import hail.expr.aggregators as agg
@@ -272,3 +271,7 @@ def annotate_sex(ds: Union[hl.MatrixTable, hl.Table],
                         )
               )
     return ds
+
+
+def hail_version() -> str:
+    return hl.__version__

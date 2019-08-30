@@ -1,0 +1,13 @@
+cluster_name	csq_group	beta	standard_error	z_stat	p_value	fit	odds_ratio	lower_ci_95	upper_ci_95	analysis	covariates
+geneset_1	CADD	NA	NA	NA	NA	{"n_iterations":26,"converged":false,"exploded":false}	NA	NA	NA	all_cases	["PC1","PC2","PC3"]
+geneset_1	PAV	-1.2536e+00	7.1651e-01	-1.7495e+00	8.0198e-02	{"n_iterations":6,"converged":true,"exploded":false}	2.8549e-01	7.0095e-02	1.1628e+00	all_cases	["PC1","PC2","PC3"]
+geneset_1	SYN	-8.3377e-01	6.6192e-01	-1.2596e+00	2.0780e-01	{"n_iterations":5,"converged":true,"exploded":false}	4.3441e-01	1.1870e-01	1.5898e+00	all_cases	["PC1","PC2","PC3"]
+geneset_2	CADD	NA	NA	NA	NA	{"n_iterations":1,"converged":false,"exploded":true}	NA	NA	NA	all_cases	["PC1","PC2","PC3"]
+geneset_2	PAV	-4.6305e-01	7.0006e-01	-6.6145e-01	5.0833e-01	{"n_iterations":5,"converged":true,"exploded":false}	6.2936e-01	1.5959e-01	2.4820e+00	all_cases	["PC1","PC2","PC3"]
+geneset_2	SYN	8.4731e-01	6.2418e-01	1.3575e+00	1.7463e-01	{"n_iterations":5,"converged":true,"exploded":false}	2.3334e+00	6.8654e-01	7.9305e+00	all_cases	["PC1","PC2","PC3"]
+geneset_3	CADD	-2.1475e+00	1.5384e+00	-1.3959e+00	1.6274e-01	{"n_iterations":6,"converged":true,"exploded":false}	1.1677e-01	5.7251e-03	2.3816e+00	all_cases	["PC1","PC2","PC3"]
+geneset_3	PAV	-2.1475e+00	1.5384e+00	-1.3959e+00	1.6274e-01	{"n_iterations":6,"converged":true,"exploded":false}	1.1677e-01	5.7251e-03	2.3816e+00	all_cases	["PC1","PC2","PC3"]
+geneset_3	SYN	-6.5574e-01	9.1649e-01	-7.1549e-01	4.7430e-01	{"n_iterations":5,"converged":true,"exploded":false}	5.1906e-01	8.6117e-02	3.1286e+00	all_cases	["PC1","PC2","PC3"]
+geneset_4	CADD	-1.8086e+00	1.3914e+00	-1.2998e+00	1.9366e-01	{"n_iterations":6,"converged":true,"exploded":false}	1.6388e-01	1.0719e-02	2.5057e+00	all_cases	["PC1","PC2","PC3"]
+geneset_4	PAV	-5.2380e-01	5.5625e-01	-9.4166e-01	3.4637e-01	{"n_iterations":5,"converged":true,"exploded":false}	5.9227e-01	1.9908e-01	1.7620e+00	all_cases	["PC1","PC2","PC3"]
+geneset_4	SYN	-5.0323e-01	7.9622e-01	-6.3203e-01	5.2737e-01	{"n_iterations":4,"converged":true,"exploded":false}	6.0457e-01	1.2697e-01	2.8788e+00	all_cases	["PC1","PC2","PC3"]

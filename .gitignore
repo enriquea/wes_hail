@@ -199,12 +199,12 @@ fabric.properties
 data/
 notebook/
 test/
-testdata/hts/ccrs_test_table.ht/references/
 testdata/mts/
-testdata/vcfs/
 /notebook_old/
 /spark_scripts/
-.idea/inspectionProfiles/
-.idea/misc.xml
+
 logs/
 testdata/hts/
+testdata/vcf/
+
+.idea/

@@ -5,10 +5,13 @@ A set of helper function for Hail-based pipelines.
 """
 
 import os
+import sys
+import time
 from typing import *
 
 import hail as hl
 import hail.expr.aggregators as agg
+import pyspark
 from pyspark import SparkContext
 
 
@@ -20,6 +23,18 @@ def logistic_regression(mt: hl.MatrixTable,
                         pass_through: list,
                         extra_fields: dict,
                         add_odd_stats: bool = True) -> hl.Table:
+    """
+    Perform a logistic-regression test (use by default Wald test).
+
+    :param mt: Hail MatrixTable
+    :param x_expr: the genotype field name (numeric expression)
+    :param response: binary response
+    :param covs: list of covariates to be included in the test
+    :param pass_through: list of extra fields to keep in the output
+    :param extra_fields: extra field to annotated (expected a dict)
+    :param add_odd_stats: compute odds from logistic regression stats
+    :return: Hail Table with logistic regression test results
+    """
     # parsing covariates list
     if len(covs) >= 1:
         covs = [1] + [mt[field] for field in covs]
@@ -51,15 +66,28 @@ def compute_fisher_exact(tb: hl.Table,
                          n_control_col: str,
                          total_cases: int,
                          total_control: int,
+                         correct_total_counts: bool,
                          root_col_name: str,
-                         corrected_total_count: True,
                          extra_fields: dict) -> hl.Table:
+    """
+    Perform two-sided Fisher Exact test. Add extra annotations (if any)
+
+    :param tb: Hail Table
+    :param n_cases_col: number of cases
+    :param n_control_col: number of control
+    :param total_cases: total cases
+    :param total_control: total controls
+    :param correct_total_counts: should the total numbers (case/control) be corrected to avoid duplicated counting?
+    :param root_col_name: field to be annotated with test results
+    :param extra_fields: Extra filed (should be a dict) to be annotated
+    :return: Hail Table with Fisher Exact test results.
+    """
     # compute fisher exact
-    if corrected_total_count:
+    if correct_total_counts:
         fet = hl.fisher_exact_test(c1=hl.int32(tb[n_cases_col]),
                                    c2=hl.int32(tb[n_control_col]),
-                                   c3=hl.int32(total_cases - tb[n_cases_col]),
-                                   c4=hl.int32(total_control - tb[n_control_col]))
+                                   c3=hl.int32(total_cases) - hl.int32(tb[n_cases_col]),
+                                   c4=hl.int32(total_control) - hl.int32(tb[n_control_col]))
     else:
         fet = hl.fisher_exact_test(c1=hl.int32(tb[n_cases_col]),
                                    c2=hl.int32(tb[n_control_col]),
@@ -120,12 +148,14 @@ def compute_qc(mt: hl.MatrixTable,
 
 # Basic function to initialize Hail on cluster or local mode
 def init_hail_on_cluster(app_name: str = 'Hail',
+                         genome_ref: str = 'GRCh38',
                          tmp_dir: str = '/tmp',
-                         log_file: str = '/logs/hail.log',
+                         log_file: str = 'logs/hail.log',
                          local_mode: bool = False) -> None:
     """
     Init Hail context on Spark cluster or in local mode
 
+    :param genome_ref: object
     :param app_name: Application name
     :param tmp_dir: Directory for temporal file (network visible on cluster mode)
     :param log_file: Hail log file
@@ -134,11 +164,20 @@ def init_hail_on_cluster(app_name: str = 'Hail',
     """
 
     if local_mode:
-        hl.init()
+        # Init Hail with a basic SparkContext
+        number_cores = 4
+        memory_gb = 16
+        conf = (pyspark.SparkConf()
+                .setMaster('local[{}]'.format(number_cores))
+                .set('spark.driver.memory', '{}g'.format(memory_gb))
+                )
+        sc = pyspark.SparkContext(conf=conf)
+        hl.init(sc=sc, default_reference=genome_ref)
     else:
         # Create SparkContext with default parameters (from SPARK_PATH/conf/spark-defaults.conf)
         sc = SparkContext(appName=app_name)
         hl.init(sc=sc,
+                default_reference=genome_ref,
                 tmp_dir=tmp_dir,
                 app_name=app_name,
                 log=log_file)
@@ -275,3 +314,102 @@ def annotate_sex(ds: Union[hl.MatrixTable, hl.Table],
 
 def hail_version() -> str:
     return hl.__version__
+
+
+# Filter variants defined in target regions.
+def filter_interval(mt: hl.MatrixTable,
+                    tb_bed: hl.Table) -> hl.MatrixTable:
+    """
+    Keep variants defined in target regions (BED file)
+
+    :param mt: Hail MatrixTable
+    :param tb_bed: HailTable with interval field generated with hl.import_bed function
+    :return: Row-filtered MatrixTable
+    """
+    n_total = mt.count_rows()
+
+    mt = (mt
+          .filter_rows(hl.is_defined((tb_bed[mt.locus])),
+                       keep=True)
+          )
+
+    n_filtered = n_total - mt.count_rows()
+
+    pct = round((n_filtered / n_total) * 100, 2)
+
+    print(f"Filtered {n_filtered} ({pct}%) non-covered variants out of {n_total}")
+
+    return mt
+
+
+# Print current date
+def current_date() -> str:
+    return time.strftime("%d%m%Y")
+
+
+# Annotate fields from array (all elements must have the same length)
+def annotate_from_array(ht: hl.Table,
+                        array_field: str,
+                        field_names: list) -> hl.Table:
+    """
+    Expand an array structure and add new fields.
+
+    :param ht: HailTable
+    :param array_field: The array field to be expanded
+    :param field_names: The pre-defined fields names (ordered). Number of fields must match with array length
+    :return: Annotated HailTable
+    """
+
+    # number of fields to be annotated
+    n_fields = field_names.__len__()
+
+    # get array field length
+    array_len = hl.len(ht[array_field]).take(1)[0]
+
+    if array_len == n_fields:
+        tb_expanded = ht.transmute(**{field_names[i]: ht[array_field][i] for i in range(n_fields)})
+    else:
+        print("Number of fields don't match with array length...")
+        sys.exit()
+    return tb_expanded
+
+
+# Keep only bi-allelic variants
+def filter_biallelic(mt: hl.MatrixTable) -> hl.MatrixTable:
+    """
+    Remove multi-allelic variant. Keep bi-allelic only.
+
+    :param mt: Hail MatrixTable
+    :return: Filtered MatrixTable
+    """
+    n_total = mt.count_rows()
+    mt = (mt
+          .filter_rows(hl.len(mt.alleles) == 2,
+                       keep=True)
+
+          )
+    n_filtered = n_total - mt.count_rows()
+
+    pct = round((n_filtered / n_total) * 100, 2)
+
+    print(f'Filtered {n_filtered} ({pct}%) multi-allelic variants out of {n_total}.')
+
+    return mt
+
+
+# annotate variant key
+def annotate_variant_key(ds: Union[hl.MatrixTable, hl.Table]
+                         ) -> Union[hl.MatrixTable, hl.Table]:
+    # define key variant expression
+    key_expr = hl.delimit([ds.locus.contig,
+                           hl.str(ds.locus.position),
+                           ds.alleles[0],
+                           ds.alleles[1]], ':')
+
+    if isinstance(ds, hl.MatrixTable):
+        ds = ds.annotate_rows(variant_key=key_expr)
+
+    if isinstance(ds, hl.Table):
+        ds = ds.annotate(variant_key=key_expr)
+
+    return ds

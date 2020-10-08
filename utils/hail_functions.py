@@ -413,3 +413,24 @@ def annotate_variant_key(ds: Union[hl.MatrixTable, hl.Table]
         ds = ds.annotate(variant_key=key_expr)
 
     return ds
+
+
+# annotate AFs from external cohort(s)
+def annotate_af(ds: Union[hl.MatrixTable, hl.Table],
+                ht_af: hl.Table,
+                fields_to_annotate: List[str]) -> Union[hl.MatrixTable, hl.Table]:
+    """
+    Annotate AFs from external source/data set.
+
+    :param ds: Either MatrixTable or HailTable to be annotated. Expected to be keyed by [locus, alleles]
+    :param ht_af: HailTable with AFs to be annotated. Expected to be keyed by [locus, alleles]
+    :param fields_to_annotate: AF fields names to be annotated from ht_af.
+    :return: Annotated dataset.
+    """
+
+    if isinstance(ds, hl.MatrixTable):
+        ds = ds.annotate_rows(**ht_af.select(*fields_to_annotate)[ds.locus, ds.alleles])
+    if isinstance(ds, hl.Table):
+        ds = ds.annotate(**ht_af.select(*fields_to_annotate)[ds.locus, ds.alleles])
+
+    return ds

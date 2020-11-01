@@ -1,6 +1,7 @@
 import argparse
-from config import *
-from utils.hail_functions import *
+import hail as hl
+from config import HAIL_TMP_DIR, HAIL_LOG_PATH
+from utils.hail_functions import init_hail_on_cluster, logistic_regression
 
 
 def main(args):
@@ -16,12 +17,20 @@ def main(args):
 
     # Annotate csq group info per variants
     # Define consequences variant rules with hail expressions
-    csq_group_rules = {'PTV': mt.csq_type == 'PTV',
-                       'PAV': mt.csq_type == 'PAV',
-                       'SYN': mt.csq_type == 'SYN',
-                       'CADD': (mt.csq_type == 'PAV') & (mt.cadd_phred >= args.cadd_threshold),
-                       'MPC': (mt.csq_type == 'PAV') & (mt.mpc >= args.mpc_threshold)
-                       }
+    # TODO: check if field exist in dataset
+    csq_group_rules = {}
+    if args.ptv:
+        csq_group_rules = csq_group_rules.update({'PTV': mt.csq_type == 'PTV'})
+    if args.pav:
+        csq_group_rules = csq_group_rules.update({'PAV': mt.csq_type == 'PAV'})
+    if args.syn:
+        csq_group_rules = csq_group_rules.update({'SYN': mt.csq_type == 'SYN'})
+    if args.cadd:
+        csq_group_rules = csq_group_rules.update({'CADD': (mt.csq_type == 'PAV') &
+                                                          (mt.cadd_phred >= args.cadd_threshold)})
+    if args.mpc:
+        csq_group_rules = csq_group_rules.update({'MPC': (mt.csq_type == 'PAV') &
+                                                         (mt.mpc >= args.mpc_threshold)})
 
     # Annotate groups per variants
     mt = (mt
@@ -44,7 +53,7 @@ def main(args):
     mt_grouped = (mt
                   .group_rows_by(mt.csq_group, mt.symbol)
                   .partition_hint(100)
-                  .aggregate(n_het=agg.count_where(mt.GT.is_het()))
+                  .aggregate(n_het=hl.agg.count_where(mt.GT.is_het()))
                   )
 
     # 2- Annotate gene set information
@@ -65,7 +74,7 @@ def main(args):
     clusters = (clusters
                 .group_by('genes')
                 .partition_hint(100)
-                .aggregate(cluster_name=agg.collect_as_set(clusters['f0']))
+                .aggregate(cluster_name=hl.agg.collect_as_set(clusters['f0']))
                 .key_by('genes')
                 )
 
@@ -83,7 +92,7 @@ def main(args):
     mt_grouped = (mt_grouped
                   .group_rows_by(mt_grouped.cluster_name, mt_grouped.csq_group)
                   .partition_hint(100)
-                  .aggregate(n_het=agg.sum(mt_grouped.n_het))
+                  .aggregate(n_het=hl.agg.sum(mt_grouped.n_het))
                   )
 
     # force to eval all aggregation operation by writing mt to disk
@@ -125,15 +134,15 @@ if __name__ == '__main__':
                         default=None)
 
     # consequences groups
-    # parser.add_argument('--ptv', help='Test protein truncating variants', action='store_true')
-    # parser.add_argument('--pav', help='Test protein altering variant', action='store_true')
-    # parser.add_argument('--syn', help='Test synonymous variants', action='store_true')
+    parser.add_argument('--ptv', help='Test protein truncating variants', action='store_true')
+    parser.add_argument('--pav', help='Test protein altering variant', action='store_true')
+    parser.add_argument('--syn', help='Test synonymous variants', action='store_true')
     parser.add_argument('--cadd', help='Test PAVs filtered by CADD-score', action='store_true')
     parser.add_argument('--cadd_threshold', help='CADD-score lower threshold', type=float, default=20)
     parser.add_argument('--mpc', help='Test MPC filtered by MPC-score', action='store_true')
-    parser.add_argument('--mpc_threshold', help='MPC-score lower threshold', type=float, default=20)
+    parser.add_argument('--mpc_threshold', help='MPC-score lower threshold', type=float, default=2)
 
-    # test to run
+    # statistical test to run
     parser.add_argument('--logistic_regression', help='Run logistic regression burden test', action='store_true')
     parser.add_argument('--phenotype_field', help='Binary phenotype field name', type=str, default='isCase')
     parser.add_argument('--add_covariates', help='Run logistic regression test with covariates', action='store_true')

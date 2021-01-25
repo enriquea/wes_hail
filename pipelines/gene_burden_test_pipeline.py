@@ -127,8 +127,6 @@ if __name__ == '__main__':
 
     # input/output paths arguments
     parser.add_argument('--mt_input_path', help='Path to MatrixTable', type=str, default=None)
-    parser.add_argument('--gene_set_path', help='Path to two-columns TSV gene set file', type=str,
-                        default=None)
     parser.add_argument('--output_path', help='Output path to TSV file', type=str,
                         default=None)
 

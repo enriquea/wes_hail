@@ -1,15 +1,15 @@
 """
-
 Compute relatedness estimates between individuals using a variant of the PC-Relate method.
 
-Example usage: python -m scripts.sample_relatedness --mt_path 'path/to/mt' \
-                                                    --ht_output_path 'path/to/hts' \
-                                                    --common_only \
-                                                    --maf_threshold 0.05 \
-                                                    --compute_pcs \
-                                                    --ld_pruning \
-                                                    --write_to_file
+Example usage:
 
+python sample_relatedness --mt_path 'path/to/mt' \
+                          --ht_output_path 'path/to/hts' \
+                          --common_only \
+                          --maf_threshold 0.05 \
+                          --compute_pcs \
+                          --ld_pruning \
+                          --write_to_file
 """
 
 import argparse
@@ -51,6 +51,8 @@ def main(args):
         # Zulip Hail support issue -> "BlockMatrix trouble when running pc_relate"
         mt = mt.unfilter_entries()
 
+        # Prune variants in linkage disequilibrium.
+        # Return a table with nearly uncorrelated variants
         pruned_variant_table = hl.ld_prune(mt.GT,
                                            r2=args.r2,
                                            bp_window_size=args.bp_window_size,
@@ -61,10 +63,10 @@ def main(args):
               .filter_rows(hl.is_defined(pruned_variant_table[mt.locus, mt.alleles]), keep=True)
               )
 
-    if args.compute_pcs:
-        relatedness = hl.pc_relate(mt.GT, args.individual_specific_maf, k=args.n_pcs, statistics='all')
-    else:
-        relatedness = hl.pc_relate(mt.GT, args.individual_specific_maf, k=None, statistics='all')
+    relatedness = hl.pc_relate(mt.GT,
+                               args.individual_specific_maf,
+                               k=args.n_pcs,
+                               statistics='all')
 
     # TODO: retrieve maximal independent sample set
 
@@ -73,7 +75,7 @@ def main(args):
           .flatten()
           .key_by('i.s', 'j.s')
           )
-    date = time.strftime("%d-%m-%Y")
+    date = time.strftime("%d%m%Y")
     tb.write(output=f'{args.ht_output_path}_{date}.ht')
 
     # Write PCs table to file (if specified)
@@ -91,12 +93,12 @@ if __name__ == '__main__':
     parser.add_argument('--ht_output_path', help='Output HailTable path with Kinship stats', type=str, default=None)
     parser.add_argument('--sample_to_keep', help='Text file (one-column, no header) listing the samples to keep',
                         type=str, default=None)
-    parser.add_argument('--compute_pcs', help='Use PCs as covariates (recommended)', action='store_true')
     parser.add_argument('--n_pcs', help='Number of PCs to be computed', type=int, default=10)
     parser.add_argument('--individual_specific_maf', help='MAF cutoff for filtering', type=float, default=0.01)
     parser.add_argument('--common_only', help='Run PC-relate method on common variant set (default MAF 1%)',
                         action='store_true')
-    parser.add_argument('--maf_threshold', help='MAF cutoff for filtering variants', type=float, default=0.01)
+    parser.add_argument('--maf_threshold', help='Variants with maf below that threshold are removed',
+                        type=float, default=0.01)
     parser.add_argument('--ld_pruning', help='Perform LD pruning before PCA (recommended)', action='store_true')
     parser.add_argument('--r2', help='Squared correlation threshold for LD pruning', type=float, default=0.2)
     parser.add_argument('--bp_window_size', help='Window size in bps', type=int, default=500000)

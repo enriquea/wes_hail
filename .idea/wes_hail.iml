@@ -4,7 +4,7 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/wes_hail" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.6 (wes_hail)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (venv2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="R User Library" level="project" />
     <orderEntry type="library" name="R Skeletons" level="application" />

@@ -39,7 +39,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Unit testscripts / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -198,7 +198,7 @@ fabric.properties
 .DS_Store
 data/
 notebook/
-test/
+testscripts/
 testdata/mts/
 /notebook_old/
 /spark_scripts/

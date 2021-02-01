@@ -118,7 +118,7 @@ def main(args):
         tb_stats.export(args.output_path)
 
     if args.fet:
-        None  # TODO: implement Fisher Exact-based burden gene set test
+        None  # TODO: implement Fisher Exact-based burden gene set testscripts
 
     hl.stop()
 
@@ -142,11 +142,11 @@ if __name__ == '__main__':
     parser.add_argument('--mpc', help='Test MPC filtered by MPC-score', action='store_true')
     parser.add_argument('--mpc_threshold', help='MPC-score lower threshold', type=float, default=2)
 
-    # statistical test to run
-    parser.add_argument('--logistic_regression', help='Run logistic regression burden test', action='store_true')
+    # statistical testscripts to run
+    parser.add_argument('--logistic_regression', help='Run logistic regression burden testscripts', action='store_true')
     parser.add_argument('--phenotype_field', help='Binary phenotype field name', type=str, default='isCase')
-    parser.add_argument('--add_covariates', help='Run logistic regression test with covariates', action='store_true')
-    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression test',
+    parser.add_argument('--add_covariates', help='Run logistic regression testscripts with covariates', action='store_true')
+    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression testscripts',
                         type=str, nargs="*", default=[])
     parser.add_argument('--fet', help='Run tow-sided Fisher Exact Test', action='store_true')
 

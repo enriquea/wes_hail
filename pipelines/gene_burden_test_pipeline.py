@@ -11,16 +11,16 @@ def logistic_regression(mt: hl.MatrixTable,
                         extra_fields: dict,
                         add_odd_stats: bool = True) -> hl.Table:
     """
-    Perform a logistic-regression test (use by default Wald test).
+    Perform a logistic-regression testscripts (use by default Wald testscripts).
 
     :param mt: Hail MatrixTable
     :param x_expr: the genotype field name (numeric expression)
     :param response: binary response
-    :param covs: list of covariates to be included in the test
+    :param covs: list of covariates to be included in the testscripts
     :param pass_through: list of extra fields to keep in the output
     :param extra_fields: extra field to annotated (expected a dict)
     :param add_odd_stats: compute odds from logistic regression stats
-    :return: Hail Table with logistic regression test results
+    :return: Hail Table with logistic regression testscripts results
     """
     # parsing covariates list
     if len(covs) >= 1:
@@ -117,7 +117,7 @@ def main(args):
         tb_stats.export(args.output_path)
 
     if args.fet:
-        None  # TODO: implement gene-based Fisher Exact burden test
+        None  # TODO: implement gene-based Fisher Exact burden testscripts
 
     hl.stop()
 
@@ -137,11 +137,11 @@ if __name__ == '__main__':
     parser.add_argument('--cadd', help='Test PAVs filtered by CADD-score', action='store_true')
     parser.add_argument('--cadd_threshold', help='CADD-score lower threshold', type=float, default=20)
 
-    # statistical test to run
-    parser.add_argument('--logistic_regression', help='Run logistic regression burden test', action='store_true')
+    # statistical testscripts to run
+    parser.add_argument('--logistic_regression', help='Run logistic regression burden testscripts', action='store_true')
     parser.add_argument('--phenotype_field', help='Binary phenotype field name', type=str, default='isCase')
-    parser.add_argument('--add_covariates', help='Run logistic regression test with covariates', action='store_true')
-    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression test',
+    parser.add_argument('--add_covariates', help='Run logistic regression testscripts with covariates', action='store_true')
+    parser.add_argument('--covs_list', help='List of covariates field names to run logistic regression testscripts',
                         type=str, nargs="*", default=[])
     parser.add_argument('--fet', help='Run tow-sided Fisher Exact Test', action='store_true')
 

@@ -24,7 +24,7 @@ def logistic_regression(mt: hl.MatrixTable,
                         extra_fields: dict,
                         add_odd_stats: bool = True) -> hl.Table:
     """
-    Perform a logistic-regression testscripts (use by default Wald testscripts).
+    Perform a logistic-regression test (use by default Wald test).
 
     :param mt: Hail MatrixTable
     :param x_expr: the genotype field name (numeric expression)
@@ -33,7 +33,7 @@ def logistic_regression(mt: hl.MatrixTable,
     :param pass_through: list of extra fields to keep in the output
     :param extra_fields: extra field to annotated (expected a dict)
     :param add_odd_stats: compute odds from logistic regression stats
-    :return: Hail Table with logistic regression testscripts results
+    :return: Hail Table with logistic regression test results
     """
     # parsing covariates list
     if len(covs) >= 1:
@@ -70,7 +70,7 @@ def compute_fisher_exact(tb: hl.Table,
                          root_col_name: str,
                          extra_fields: dict) -> hl.Table:
     """
-    Perform two-sided Fisher Exact testscripts. Add extra annotations (if any)
+    Perform two-sided Fisher Exact test. Add extra annotations (if any)
 
     :param tb: Hail Table
     :param n_cases_col: number of cases
@@ -78,9 +78,9 @@ def compute_fisher_exact(tb: hl.Table,
     :param total_cases: total cases
     :param total_control: total controls
     :param correct_total_counts: should the total numbers (case/control) be corrected to avoid duplicated counting?
-    :param root_col_name: field to be annotated with testscripts results
+    :param root_col_name: field to be annotated with test results
     :param extra_fields: Extra filed (should be a dict) to be annotated
-    :return: Hail Table with Fisher Exact testscripts results.
+    :return: Hail Table with Fisher Exact test results.
     """
     # compute fisher exact
     if correct_total_counts:

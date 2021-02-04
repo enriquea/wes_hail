@@ -31,7 +31,7 @@ def logistic_regression(mt: hl.MatrixTable,
     :param response: binary response
     :param covs: list of covariates to be included in the testscripts
     :param pass_through: list of extra fields to keep in the output
-    :param extra_fields: extra field to annotated (expected a dict)
+    :param extra_fields: extra field to annotated be (expected a dict)
     :param add_odd_stats: compute odds from logistic regression stats
     :return: Hail Table with logistic regression test results
     """
@@ -64,8 +64,8 @@ def logistic_regression(mt: hl.MatrixTable,
 def compute_fisher_exact(tb: hl.Table,
                          n_cases_col: str,
                          n_control_col: str,
-                         total_cases: int,
-                         total_control: int,
+                         total_cases_col: str,
+                         total_controls_col: str,
                          correct_total_counts: bool,
                          root_col_name: str,
                          extra_fields: dict) -> hl.Table:
@@ -73,26 +73,26 @@ def compute_fisher_exact(tb: hl.Table,
     Perform two-sided Fisher Exact test. Add extra annotations (if any)
 
     :param tb: Hail Table
-    :param n_cases_col: number of cases
-    :param n_control_col: number of control
-    :param total_cases: total cases
-    :param total_control: total controls
+    :param n_cases_col: field name with number of (affected) cases
+    :param n_control_col: field name with number of (affected) control
+    :param total_cases_col: field name with total number of cases
+    :param total_controls_col: field name with total number of controls
     :param correct_total_counts: should the total numbers (case/control) be corrected to avoid duplicated counting?
     :param root_col_name: field to be annotated with test results
-    :param extra_fields: Extra filed (should be a dict) to be annotated
+    :param extra_fields: Extra filed (must be a dict) to be annotated
     :return: Hail Table with Fisher Exact test results.
     """
     # compute fisher exact
     if correct_total_counts:
         fet = hl.fisher_exact_test(c1=hl.int32(tb[n_cases_col]),
                                    c2=hl.int32(tb[n_control_col]),
-                                   c3=hl.int32(total_cases) - hl.int32(tb[n_cases_col]),
-                                   c4=hl.int32(total_control) - hl.int32(tb[n_control_col]))
+                                   c3=hl.int32(tb[total_cases_col]) - hl.int32(tb[n_cases_col]),
+                                   c4=hl.int32(tb[total_controls_col]) - hl.int32(tb[n_control_col]))
     else:
         fet = hl.fisher_exact_test(c1=hl.int32(tb[n_cases_col]),
                                    c2=hl.int32(tb[n_control_col]),
-                                   c3=hl.int32(total_cases),
-                                   c4=hl.int32(total_control))
+                                   c3=hl.int32(tb[total_cases_col]),
+                                   c4=hl.int32(tb[total_controls_col]))
 
     tb = (tb
           .annotate(**{root_col_name: fet})

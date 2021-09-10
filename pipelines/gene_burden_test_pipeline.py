@@ -61,13 +61,13 @@ def main(args):
     # TODO: check if fields exist in dataset
     csq_group_rules = {}
     if args.ptv:
-        csq_group_rules = csq_group_rules.update({'PTV': mt.csq_type == 'PTV'})
+        csq_group_rules.update({'PTV': mt.csq_type == 'PTV'})
     if args.pav:
-        csq_group_rules = csq_group_rules.update({'PAV': mt.csq_type == 'PAV'})
+        csq_group_rules.update({'PAV': mt.csq_type == 'PAV'})
     if args.syn:
-        csq_group_rules = csq_group_rules.update({'SYN': mt.csq_type == 'SYN'})
+        csq_group_rules.update({'SYN': mt.csq_type == 'SYN'})
     if args.cadd:
-        csq_group_rules = csq_group_rules.update({'CADD': (mt.csq_type == 'PAV') &
+        csq_group_rules.update({'CADD': (mt.csq_type == 'PAV') &
                                                           (mt.cadd_phred >= args.cadd_threshold)})
 
     # Annotate groups per variants
